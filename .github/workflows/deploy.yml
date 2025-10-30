@@ -36,7 +36,7 @@ jobs:
           BUILD_NUMBER=${{ github.run_number }}
           IMAGE_URI=${{ steps.login-ecr.outputs.registry }}/nodejs-eks-demo:build-${BUILD_NUMBER}
           echo "Building image: $IMAGE_URI"
-          docker build -t $IMAGE_URI ./nodeapp
+          docker build -t $IMAGE_URI .
           docker push $IMAGE_URI
           echo "image_uri=$IMAGE_URI" >> $GITHUB_OUTPUT
 
