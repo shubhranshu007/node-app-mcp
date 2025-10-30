@@ -1,12 +1,11 @@
-{
-  "name": "my-node-app",
-  "version": "1.0.0",
-  "description": "A simple Node.js app",
-  "main": "server.js",
-  "scripts": {
-    "start": "node server.js"
-  },
-  "dependencies": {
-    "express": "^4.19.2"
-  }
-}
+const express = require('express');
+const app = express();
+const PORT = process.env.PORT || 8080;
+
+app.get('/', (req, res) => {
+  res.send('🚀 Hello from Node.js running on Amazon EKS!');
+});
+
+app.listen(PORT, () => {
+  console.log(`✅ Server is running on port ${PORT}`);
+});
