@@ -67,4 +67,3 @@ jobs:
           echo "Fetching Ingress ALB URL..."
           INGRESS_URL=$(kubectl get ingress nodejs-eks-ingress -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
           echo "✅ Application available at: http://$INGRESS_URL"
-
