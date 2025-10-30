@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nodejs-eks-demo
+  labels:
+    app: nodejs-eks-demo
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: nodejs-eks-demo
+  template:
+    metadata:
+      labels:
+        app: nodejs-eks-demo
+    spec:
+      containers:
+        - name: nodejs
+          image: 571600863856.dkr.ecr.us-east-1.amazonaws.com/nodejs-eks-demo:latest
+          ports:
+            - containerPort: 8080
