@@ -51,3 +51,20 @@ jobs:
         run: |
           kubectl set image deployment/nodejs-eks-demo nodejs=${{ steps.build-image.outputs.image_uri }} --namespace default || kubectl apply -f k8s/
           kubectl rollout status deployment/nodejs-eks-demo --timeout=120s
+
+      # 7️⃣ Apply or update Ingress resource (to expose via AWS ALB)
+      - name: Apply Ingress
+        run: |
+          echo "Applying Ingress configuration..."
+          kubectl apply -f k8s/ingress.yaml
+          echo "Waiting for ALB to be created..."
+          sleep 60
+          kubectl get ingress nodejs-eks-ingress
+
+      # 8️⃣ Display ALB URL
+      - name: Show ALB Endpoint
+        run: |
+          echo "Fetching Ingress ALB URL..."
+          INGRESS_URL=$(kubectl get ingress nodejs-eks-ingress -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+          echo "✅ Application available at: http://$INGRESS_URL"
+
