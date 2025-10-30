@@ -22,7 +22,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::571600863856:role/github-eks-oidc-role
-          aws-region: us-east-1
+          aws-region: us-west-2
 
       # 3️⃣ Login to Amazon ECR
       - name: Login to Amazon ECR
