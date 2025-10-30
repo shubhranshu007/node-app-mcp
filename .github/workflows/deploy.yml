@@ -1,4 +1,4 @@
-name: Build, Tag, Push, and Deploy to EKS
+name: Build, Tag, Push, and Deploy to EKS (us-west-2)
 
 on:
   push:
@@ -40,19 +40,19 @@ jobs:
           docker push $IMAGE_URI
           echo "image_uri=$IMAGE_URI" >> $GITHUB_OUTPUT
 
-      # 5️⃣ Update kubeconfig to connect to EKS
+      # 5️⃣ Update kubeconfig for EKS (us-west-2)
       - name: Update kubeconfig
-      
         run: |
           aws eks update-kubeconfig --region us-west-2 --name eks-default-cluster
 
       # 6️⃣ Deploy new image to EKS
       - name: Deploy to EKS
         run: |
+          echo "Deploying image to EKS..."
           kubectl set image deployment/nodejs-eks-demo nodejs=${{ steps.build-image.outputs.image_uri }} --namespace default || kubectl apply -f k8s/
           kubectl rollout status deployment/nodejs-eks-demo --timeout=120s
 
-      # 7️⃣ Apply or update Ingress resource (to expose via AWS ALB)
+      # 7️⃣ Apply or update Ingress resource (for ALB)
       - name: Apply Ingress
         run: |
           echo "Applying Ingress configuration..."
