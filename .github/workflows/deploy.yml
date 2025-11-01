@@ -43,7 +43,7 @@ jobs:
       # 5️⃣ Update kubeconfig for EKS (us-west-2)
       - name: Update kubeconfig
         run: |
-          aws eks update-kubeconfig --region us-east-1 --name eks-default-cluster
+          aws eks update-kubeconfig --region us-east-1 --name eks-dev-cluster
 
       # 6️⃣ Deploy new image to EKS
       - name: Deploy to EKS
