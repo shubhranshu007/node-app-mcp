@@ -1,4 +1,4 @@
-name: Build, Tag, Push, and Deploy to EKS (us-west-2)
+name: Build, Tag, Push, and Deploy to EKS (us-east-1)
 
 on:
   push:
@@ -13,23 +13,23 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout source code
+      # 1️⃣ Checkout source
       - name: Checkout
         uses: actions/checkout@v4
 
-      # 2️⃣ Configure AWS credentials (OIDC-based)
+      # 2️⃣ Configure AWS credentials
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::571600863856:role/github-eks-oidc-role
           aws-region: us-east-1
 
-      # 3️⃣ Login to Amazon ECR
+      # 3️⃣ Login to ECR
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      # 4️⃣ Build and Push Docker Image with Build Number Tag
+      # 4️⃣ Build and Push Docker Image with build number tag
       - name: Build and Push Docker Image
         id: build-image
         run: |
@@ -40,30 +40,27 @@ jobs:
           docker push $IMAGE_URI
           echo "image_uri=$IMAGE_URI" >> $GITHUB_OUTPUT
 
-      # 5️⃣ Update kubeconfig for EKS (us-west-2)
+      # 5️⃣ Update Deployment YAML dynamically with new image
+      - name: Update Deployment YAML with new image
+        run: |
+          sed -i "s|image: .*|image: ${{ steps.build-image.outputs.image_uri }}|" k8s/deployment.yaml
+          echo "Updated deployment file:"
+          cat k8s/deployment.yaml
+
+      # 6️⃣ Update kubeconfig to connect to EKS
       - name: Update kubeconfig
         run: |
           aws eks update-kubeconfig --region us-east-1 --name eks-dev-cluster
 
-      # 6️⃣ Deploy new image to EKS
-      - name: Deploy to EKS
+      # 7️⃣ Apply Kubernetes manifests (deployment, service, ingress)
+      - name: Apply K8s resources
         run: |
-          echo "Deploying image to EKS..."
-          kubectl set image deployment/nodejs-eks-demo nodejs=${{ steps.build-image.outputs.image_uri }} --namespace default || kubectl apply -f k8s/
-          kubectl rollout status deployment/nodejs-eks-demo --timeout=120s
-
-      # 7️⃣ Apply or update Ingress resource (for ALB)
-      - name: Apply Ingress
-        run: |
-          echo "Applying Ingress configuration..."
+          kubectl apply -f k8s/deployment.yaml
+          kubectl apply -f k8s/service.yaml
           kubectl apply -f k8s/ingress.yaml
-          echo "Waiting for ALB to be created..."
-          sleep 60
-          kubectl get ingress nodejs-eks-ingress
 
-      # 8️⃣ Display ALB URL
-      - name: Show ALB Endpoint
+      # 8️⃣ Wait for rollout
+      - name: Verify Deployment Rollout
         run: |
-          echo "Fetching Ingress ALB URL..."
-          INGRESS_URL=$(kubectl get ingress nodejs-eks-ingress -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
-          echo "✅ Application available at: http://$INGRESS_URL"
+          kubectl rollout status deployment/nodejs-eks-demo --timeout=180s
+          kubectl get pods -o wide
