@@ -12,7 +12,8 @@ metadata:
 spec:
   ingressClassName: alb
   rules:
-    - http:
+    - host: login.m4n9o.com     # 👈 Route 53 domain here
+      http:
         paths:
           - path: /
             pathType: Prefix
