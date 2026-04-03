@@ -1,0 +1,59 @@
+name: Node.js CI & Docker
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-docker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Cache npm
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json','**/package.json') }}
+          restore-keys: ${{ runner.os }}-node-
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests (if present)
+        run: npm test --if-present
+
+      - name: Build Docker image
+        id: docker_build
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: ./Dockerfile
+          push: false
+          tags: my-node-app:${{ github.sha }}
+
+      - name: Smoke test container
+        run: |
+          IMAGE=my-node-app:${GITHUB_SHA}
+          docker run -d --name ci_smoke -p 3000:3000 $IMAGE
+          sleep 2
+          if ! curl -fsS http://127.0.0.1:3000/; then
+            echo "Container failed to respond; logs:" && docker logs ci_smoke && exit 1
+          fi
+          docker stop ci_smoke || true
+          docker rm ci_smoke || true
+
+# Notes:
+# - This workflow installs dependencies and runs `npm test` if that script exists.
+# - It builds the Docker image using the repository's Dockerfile and performs a simple
+#   smoke test by starting the container and curling the root endpoint.
+# - If you want the image pushed to a registry (GitHub Container Registry or Docker Hub),
+#   I can add credentials and a push step (requires repo/token permissions).
